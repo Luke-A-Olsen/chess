@@ -8,7 +8,6 @@ package chess;
  */
 public class ChessPosition
 {
-
     private int row;
     private int col;
 
