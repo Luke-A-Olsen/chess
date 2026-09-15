@@ -20,8 +20,10 @@ public class ChessPosition
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
+    public boolean equals(Object o) 
+    {
+        if (o == null || getClass() != o.getClass()) 
+        {
             return false;
         }
         ChessPosition that = (ChessPosition) o;
@@ -29,7 +31,8 @@ public class ChessPosition
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode() 
+    {
         return Objects.hash(row, col);
     }
 

@@ -21,8 +21,10 @@ public class ChessPiece
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) {
+    public boolean equals(Object o) 
+    {
+        if (o == null || getClass() != o.getClass()) 
+        {
             return false;
         }
         ChessPiece that = (ChessPiece) o;
@@ -30,7 +32,8 @@ public class ChessPiece
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode() 
+    {
         return Objects.hash(pieceColor, type);
     }
 
