@@ -22,9 +22,9 @@ public class ChessMove
     }
 
     @Override
-    public boolean equals(Object o) 
+    public boolean equals(Object o)
     {
-        if (o == null || getClass() != o.getClass()) 
+        if (o == null || getClass() != o.getClass())
         {
             return false;
         }
@@ -33,7 +33,7 @@ public class ChessMove
     }
 
     @Override
-    public int hashCode() 
+    public int hashCode()
     {
         return Objects.hash(startPosition, endPosition, promotionPiece);
     }
@@ -66,6 +66,6 @@ public class ChessMove
      */
     public ChessPiece.PieceType getPromotionPiece()
     {
-        throw new RuntimeException("Not implemented");
+        return promotionPiece;
     }
 }
