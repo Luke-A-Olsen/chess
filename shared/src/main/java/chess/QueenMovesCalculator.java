@@ -9,7 +9,7 @@ public class QueenMovesCalculator
     {
         Collection<ChessMove> moves = new ArrayList<>();
         ChessPiece me = board.getPiece(start);
-        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {1, -1}, {-1, -1}, {1, 1}};
+        int[][] directions = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {-1, 1}, {1, -1}, {-1, -1}, {1, 1}};
 
         for (int[] dir : directions)
         {
