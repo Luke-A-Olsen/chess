@@ -144,10 +144,9 @@ public class ChessGame {
                 if (piece == null || piece.getTeamColor() != teamColor) {
                     continue;
                 }
-                for (ChessMove move : piece.pieceMoves(board, position)) {
-                    if (!moveLeavesKingInCheck(teamColor, move)) {
-                        return true;
-                    }
+                Collection<ChessMove> moves = validMoves(position);
+                if (moves != null && !moves.isEmpty()) {
+                    return true;
                 }
             }
         }
