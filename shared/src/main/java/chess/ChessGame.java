@@ -41,7 +41,11 @@ public class ChessGame {
      */
     public enum TeamColor {
         WHITE,
-        BLACK
+        BLACK;
+
+        public TeamColor opponent() {
+            return this == WHITE ? BLACK : WHITE;
+        }
     }
 
     /**
@@ -79,12 +83,8 @@ public class ChessGame {
             throw new InvalidMoveException("Invalid move");
         }
 
-        board.addPiece(move.getStartPosition(), null);
-        if (move.getPromotionPiece() != null) {
-            piece = new ChessPiece(piece.getTeamColor(), move.getPromotionPiece());
-        }
-        board.addPiece(move.getEndPosition(), piece);
-        teamTurn = teamTurn == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE;
+        applyMove(board, move);
+        teamTurn = teamTurn.opponent();
     }
 
     /**
@@ -103,7 +103,7 @@ public class ChessGame {
             return false;
         }
 
-        TeamColor enemyColor = teamColor == TeamColor.WHITE ? TeamColor.BLACK : TeamColor.WHITE;
+        TeamColor enemyColor = teamColor.opponent();
         for (int row = 1; row <= 8; row++) {
             for (int col = 1; col <= 8; col++) {
                 ChessPosition position = new ChessPosition(row, col);
@@ -154,14 +154,18 @@ public class ChessGame {
         return false;
     }
 
+    private void applyMove(ChessBoard target, ChessMove move) {
+        ChessPiece piece = target.getPiece(move.getStartPosition());
+        target.addPiece(move.getStartPosition(), null);
+        if (move.getPromotionPiece() != null) {
+            piece = new ChessPiece(piece.getTeamColor(), move.getPromotionPiece());
+        }
+        target.addPiece(move.getEndPosition(), piece);
+    }
+
     private boolean moveLeavesKingInCheck(TeamColor teamColor, ChessMove move) {
         ChessBoard copy = copyBoard();
-        ChessPiece moving = copy.getPiece(move.getStartPosition());
-        copy.addPiece(move.getStartPosition(), null);
-        if (move.getPromotionPiece() != null) {
-            moving = new ChessPiece(moving.getTeamColor(), move.getPromotionPiece());
-        }
-        copy.addPiece(move.getEndPosition(), moving);
+        applyMove(copy, move);
         return isInCheck(copy, teamColor);
     }
 
