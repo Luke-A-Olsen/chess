@@ -13,6 +13,7 @@ import java.util.Objects;
 public class ChessGame {
     private TeamColor teamTurn;
     private ChessBoard board;
+    private ChessPosition enPassantTarget;
     private boolean whiteKingMoved;
     private boolean blackKingMoved;
     private boolean whiteQueensideRookMoved;
@@ -74,6 +75,7 @@ public class ChessGame {
             }
         }
         addCastlingMoves(piece, startPosition, moves);
+        addEnPassantMove(piece, startPosition, moves);
         return moves;
     }
 
@@ -169,8 +171,15 @@ public class ChessGame {
         ChessPiece piece = target.getPiece(start);
         boolean castle = piece.getPieceType() == ChessPiece.PieceType.KING
                 && Math.abs(start.getColumn() - end.getColumn()) == 2;
+        boolean enPassant = piece.getPieceType() == ChessPiece.PieceType.PAWN
+                && enPassantTarget != null
+                && enPassantTarget.equals(end)
+                && start.getColumn() != end.getColumn();
 
         target.addPiece(start, null);
+        if (enPassant) {
+            target.addPiece(new ChessPosition(start.getRow(), end.getColumn()), null);
+        }
         if (move.getPromotionPiece() != null) {
             piece = new ChessPiece(piece.getTeamColor(), move.getPromotionPiece());
         }
@@ -235,6 +244,23 @@ public class ChessGame {
         }
     }
 
+    private void addEnPassantMove(ChessPiece piece, ChessPosition start, Collection<ChessMove> moves) {
+        if (piece.getPieceType() != ChessPiece.PieceType.PAWN || enPassantTarget == null) {
+            return;
+        }
+
+        int direction = piece.getTeamColor() == TeamColor.WHITE ? 1 : -1;
+        if (start.getRow() + direction != enPassantTarget.getRow()
+                || Math.abs(start.getColumn() - enPassantTarget.getColumn()) != 1) {
+            return;
+        }
+
+        ChessMove enPassant = new ChessMove(start, enPassantTarget, null);
+        if (!moveLeavesKingInCheck(piece.getTeamColor(), enPassant)) {
+            moves.add(enPassant);
+        }
+    }
+
     private boolean isSquareAttacked(ChessBoard targetBoard, ChessPosition square, TeamColor attacker) {
         int pawnRow = attacker == TeamColor.WHITE ? square.getRow() - 1 : square.getRow() + 1;
         for (int colOffset : new int[]{-1, 1}) {
@@ -281,6 +307,12 @@ public class ChessGame {
             markRookMoved(start);
         }
         markRookMoved(end);
+
+        if (piece.getPieceType() == ChessPiece.PieceType.PAWN && Math.abs(start.getRow() - end.getRow()) == 2) {
+            enPassantTarget = new ChessPosition((start.getRow() + end.getRow()) / 2, start.getColumn());
+        } else {
+            enPassantTarget = null;
+        }
     }
 
     private void markRookMoved(ChessPosition position) {
@@ -298,6 +330,7 @@ public class ChessGame {
     }
 
     private void resetSpecialMoveState() {
+        enPassantTarget = null;
         whiteKingMoved = false;
         blackKingMoved = false;
         whiteQueensideRookMoved = false;
@@ -374,6 +407,7 @@ public class ChessGame {
         ChessGame chessGame = (ChessGame) o;
         return teamTurn == chessGame.teamTurn
                 && Objects.equals(board, chessGame.board)
+                && Objects.equals(enPassantTarget, chessGame.enPassantTarget)
                 && whiteKingMoved == chessGame.whiteKingMoved
                 && blackKingMoved == chessGame.blackKingMoved
                 && whiteQueensideRookMoved == chessGame.whiteQueensideRookMoved
@@ -384,7 +418,7 @@ public class ChessGame {
 
     @Override
     public int hashCode() {
-        return Objects.hash(teamTurn, board, whiteKingMoved, blackKingMoved,
+        return Objects.hash(teamTurn, board, enPassantTarget, whiteKingMoved, blackKingMoved,
                 whiteQueensideRookMoved, whiteKingsideRookMoved, blackQueensideRookMoved, blackKingsideRookMoved);
     }
 }
