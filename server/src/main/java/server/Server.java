@@ -1,16 +1,41 @@
 package server;
 
-import io.javalin.*;
+import dataaccess.AuthDAO;
+import dataaccess.GameDAO;
+import dataaccess.MemoryAuthDAO;
+import dataaccess.MemoryGameDAO;
+import dataaccess.MemoryUserDAO;
+import dataaccess.UserDAO;
+import io.javalin.Javalin;
+import service.ClearService;
 
 public class Server {
 
     private final Javalin javalin;
+    private final UserDAO userDAO;
+    private final GameDAO gameDAO;
+    private final AuthDAO authDAO;
 
     public Server() {
+        this(new MemoryUserDAO(), new MemoryGameDAO(), new MemoryAuthDAO());
+    }
+
+    Server(UserDAO userDAO, GameDAO gameDAO, AuthDAO authDAO) {
+        this.userDAO = userDAO;
+        this.gameDAO = gameDAO;
+        this.authDAO = authDAO;
+
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
-        // Register your endpoints and exception handlers here.
+        ClearService clearService = new ClearService(userDAO, gameDAO, authDAO);
+        ClearHandler clearHandler = new ClearHandler(clearService);
 
+        javalin.delete("/db", clearHandler::clear);
+        javalin.exception(Exception.class, (exception, context) -> {
+            context.status(500);
+            context.contentType("application/json");
+            context.result(ErrorMessage.toJson(exception));
+        });
     }
 
     public int run(int desiredPort) {
