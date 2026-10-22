@@ -1,8 +1,6 @@
 package server;
 
-import dataaccess.DataAccessException;
 import io.javalin.http.Context;
-import service.UnauthorizedException;
 import service.UserService;
 
 public class LogoutHandler
@@ -19,21 +17,11 @@ public class LogoutHandler
         try
         {
             userService.logout(context.header("authorization"));
-            context.status(200);
-            context.contentType("application/json");
-            context.result("{}");
+            HttpResponses.ok(context, "{}");
         }
-        catch (UnauthorizedException exception)
+        catch (Exception exception)
         {
-            context.status(401);
-            context.contentType("application/json");
-            context.result(ErrorMessage.toJson(exception));
-        }
-        catch (DataAccessException exception)
-        {
-            context.status(500);
-            context.contentType("application/json");
-            context.result(ErrorMessage.toJson(exception));
+            HttpResponses.fail(context, exception);
         }
     }
 }

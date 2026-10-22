@@ -45,11 +45,7 @@ public class Server {
         javalin.get("/game", gameHandler::listGames);
         javalin.post("/game", gameHandler::createGame);
         javalin.put("/game", gameHandler::joinGame);
-        javalin.exception(Exception.class, (exception, context) -> {
-            context.status(500);
-            context.contentType("application/json");
-            context.result(ErrorMessage.toJson(exception));
-        });
+        javalin.exception(Exception.class, (exception, context) -> HttpResponses.fail(context, exception));
     }
 
     public int run(int desiredPort) {
