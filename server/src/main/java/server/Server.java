@@ -8,6 +8,7 @@ import dataaccess.MemoryUserDAO;
 import dataaccess.UserDAO;
 import io.javalin.Javalin;
 import service.ClearService;
+import service.UserService;
 
 public class Server {
 
@@ -29,8 +30,11 @@ public class Server {
 
         ClearService clearService = new ClearService(userDAO, gameDAO, authDAO);
         ClearHandler clearHandler = new ClearHandler(clearService);
+        UserService userService = new UserService(userDAO, authDAO);
+        RegisterHandler registerHandler = new RegisterHandler(userService);
 
         javalin.delete("/db", clearHandler::clear);
+        javalin.post("/user", registerHandler::register);
         javalin.exception(Exception.class, (exception, context) -> {
             context.status(500);
             context.contentType("application/json");
