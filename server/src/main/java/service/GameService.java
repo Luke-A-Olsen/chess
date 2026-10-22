@@ -42,11 +42,52 @@ public class GameService
         return new ListGamesResult(games);
     }
 
-    private void requireAuth(String authToken) throws UnauthorizedException, DataAccessException
+    public void joinGame(String authToken, JoinGameRequest request) throws BadRequestException, UnauthorizedException, AlreadyTakenException, DataAccessException
     {
-        if (authToken == null || authToken.isBlank() || authDAO.getAuth(authToken) == null)
+        String username = requireAuth(authToken);
+        if (request == null || request.gameID() == null || !validColor(request.playerColor()))
+        {
+            throw new BadRequestException();
+        }
+        GameData game = gameDAO.getGame(request.gameID());
+        if (game == null)
+        {
+            throw new BadRequestException();
+        }
+        if (request.playerColor().equals("WHITE"))
+        {
+            if (game.whiteUsername() != null)
+            {
+                throw new AlreadyTakenException();
+            }
+            gameDAO.updateGame(new GameData(game.gameID(), username, game.blackUsername(), game.gameName(), game.game()));
+        }
+        else
+        {
+            if (game.blackUsername() != null)
+            {
+                throw new AlreadyTakenException();
+            }
+            gameDAO.updateGame(new GameData(game.gameID(), game.whiteUsername(), username, game.gameName(), game.game()));
+        }
+    }
+
+    private String requireAuth(String authToken) throws UnauthorizedException, DataAccessException
+    {
+        if (authToken == null || authToken.isBlank())
         {
             throw new UnauthorizedException();
         }
+        var auth = authDAO.getAuth(authToken);
+        if (auth == null)
+        {
+            throw new UnauthorizedException();
+        }
+        return auth.username();
+    }
+
+    private static boolean validColor(String playerColor)
+    {
+        return "WHITE".equals(playerColor) || "BLACK".equals(playerColor);
     }
 }

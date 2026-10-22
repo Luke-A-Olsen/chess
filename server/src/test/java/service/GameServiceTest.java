@@ -19,13 +19,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class GameServiceTest
 {
+    private MemoryAuthDAO authDAO;
     private MemoryGameDAO gameDAO;
     private GameService service;
 
     @BeforeEach
     void setup() throws DataAccessException
     {
-        MemoryAuthDAO authDAO = new MemoryAuthDAO();
+        authDAO = new MemoryAuthDAO();
         authDAO.createAuth(new AuthData("token", "user"));
         gameDAO = new MemoryGameDAO();
         service = new GameService(authDAO, gameDAO);
@@ -88,5 +89,58 @@ public class GameServiceTest
         assertThrows(UnauthorizedException.class, () -> service.listGames(null));
         assertThrows(UnauthorizedException.class, () -> service.listGames(" "));
         assertThrows(UnauthorizedException.class, () -> service.listGames("missing"));
+    }
+
+    @Test
+    @DisplayName("Join Game Claims the Requested Color")
+    void joinGameClaimsRequestedColor() throws BadRequestException, UnauthorizedException, AlreadyTakenException, DataAccessException
+    {
+        int gameID = service.createGame("token", new CreateGameRequest("test game")).gameID();
+
+        service.joinGame("token", new JoinGameRequest("WHITE", gameID));
+        service.joinGame("token", new JoinGameRequest("BLACK", gameID));
+
+        GameData stored = gameDAO.getGame(gameID);
+        assertEquals("user", stored.whiteUsername());
+        assertEquals("user", stored.blackUsername());
+    }
+
+    @Test
+    @DisplayName("Join Game Rejects a Taken Color")
+    void joinGameRejectsTakenColor() throws BadRequestException, UnauthorizedException, AlreadyTakenException, DataAccessException
+    {
+        authDAO.createAuth(new AuthData("other-token", "other"));
+        int gameID = service.createGame("token", new CreateGameRequest("test game")).gameID();
+        service.joinGame("token", new JoinGameRequest("BLACK", gameID));
+
+        assertThrows(AlreadyTakenException.class, () -> service.joinGame("other-token", new JoinGameRequest("BLACK", gameID)));
+        assertEquals("user", gameDAO.getGame(gameID).blackUsername());
+        assertNull(gameDAO.getGame(gameID).whiteUsername());
+    }
+
+    @Test
+    @DisplayName("Join Game Rejects a Bad Request")
+    void joinGameRejectsBadRequest() throws BadRequestException, UnauthorizedException, DataAccessException
+    {
+        int gameID = service.createGame("token", new CreateGameRequest("test game")).gameID();
+
+        assertThrows(BadRequestException.class, () -> service.joinGame("token", null));
+        assertThrows(BadRequestException.class, () -> service.joinGame("token", new JoinGameRequest("WHITE", null)));
+        assertThrows(BadRequestException.class, () -> service.joinGame("token", new JoinGameRequest(null, gameID)));
+        assertThrows(BadRequestException.class, () -> service.joinGame("token", new JoinGameRequest("", gameID)));
+        assertThrows(BadRequestException.class, () -> service.joinGame("token", new JoinGameRequest("GREEN", gameID)));
+        assertThrows(BadRequestException.class, () -> service.joinGame("token", new JoinGameRequest("WHITE", 999)));
+        assertNull(gameDAO.getGame(gameID).whiteUsername());
+    }
+
+    @Test
+    @DisplayName("Join Game Rejects Bad Authentication")
+    void joinGameRejectsBadAuthentication() throws BadRequestException, UnauthorizedException, DataAccessException
+    {
+        int gameID = service.createGame("token", new CreateGameRequest("test game")).gameID();
+
+        assertThrows(UnauthorizedException.class, () -> service.joinGame(null, new JoinGameRequest("WHITE", gameID)));
+        assertThrows(UnauthorizedException.class, () -> service.joinGame("missing", new JoinGameRequest("WHITE", gameID)));
+        assertNull(gameDAO.getGame(gameID).whiteUsername());
     }
 }

@@ -44,6 +44,7 @@ public class Server {
         javalin.delete("/session", logoutHandler::logout);
         javalin.get("/game", gameHandler::listGames);
         javalin.post("/game", gameHandler::createGame);
+        javalin.put("/game", gameHandler::joinGame);
         javalin.exception(Exception.class, (exception, context) -> {
             context.status(500);
             context.contentType("application/json");
