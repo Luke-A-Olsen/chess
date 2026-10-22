@@ -32,9 +32,11 @@ public class Server {
         ClearHandler clearHandler = new ClearHandler(clearService);
         UserService userService = new UserService(userDAO, authDAO);
         RegisterHandler registerHandler = new RegisterHandler(userService);
+        LoginHandler loginHandler = new LoginHandler(userService);
 
         javalin.delete("/db", clearHandler::clear);
         javalin.post("/user", registerHandler::register);
+        javalin.post("/session", loginHandler::login);
         javalin.exception(Exception.class, (exception, context) -> {
             context.status(500);
             context.contentType("application/json");
