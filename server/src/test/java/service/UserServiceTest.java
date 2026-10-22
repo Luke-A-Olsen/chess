@@ -73,4 +73,50 @@ public class UserServiceTest
         }
         assertNull(userDAO.getUser("user"));
     }
+
+    @Test
+    @DisplayName("Login Returns a New Auth Token")
+    void loginReturnsNewAuthToken() throws BadRequestException, AlreadyTakenException, UnauthorizedException, DataAccessException
+    {
+        RegisterResult registered = service.register(new RegisterRequest("user", "password", "user@mail.com"));
+
+        LoginResult result = service.login(new LoginRequest("user", "password"));
+
+        assertEquals("user", result.username());
+        assertNotNull(result.authToken());
+        assertNotEquals(registered.authToken(), result.authToken());
+        assertEquals(new AuthData(result.authToken(), "user"), authDAO.getAuth(result.authToken()));
+
+        LoginResult again = service.login(new LoginRequest("user", "password"));
+        assertNotEquals(result.authToken(), again.authToken());
+    }
+
+    @Test
+    @DisplayName("Login Rejects an Unknown User or Wrong Password")
+    void loginRejectsUnknownUserOrWrongPassword() throws BadRequestException, AlreadyTakenException, DataAccessException
+    {
+        service.register(new RegisterRequest("user", "password", "user@mail.com"));
+
+        assertThrows(UnauthorizedException.class, () -> service.login(new LoginRequest("missing", "password")));
+        assertThrows(UnauthorizedException.class, () -> service.login(new LoginRequest("user", "BAD!PASSWORD")));
+        assertEquals(new UserData("user", "password", "user@mail.com"), userDAO.getUser("user"));
+    }
+
+    @Test
+    @DisplayName("Login Rejects a Missing Field")
+    void loginRejectsMissingField() throws BadRequestException, AlreadyTakenException, DataAccessException
+    {
+        service.register(new RegisterRequest("user", "password", "user@mail.com"));
+        LoginRequest[] requests = {
+                null,
+                new LoginRequest(null, "password"),
+                new LoginRequest("user", null),
+                new LoginRequest("user", " ")
+        };
+
+        for (LoginRequest request : requests)
+        {
+            assertThrows(BadRequestException.class, () -> service.login(request));
+        }
+    }
 }

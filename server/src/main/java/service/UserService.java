@@ -31,9 +31,28 @@ public class UserService
         }
 
         userDAO.createUser(new UserData(request.username(), request.password(), request.email()));
+        return new RegisterResult(request.username(), createAuth(request.username()));
+    }
+
+    public LoginResult login(LoginRequest request) throws BadRequestException, UnauthorizedException, DataAccessException
+    {
+        if (request == null || missing(request.username()) || missing(request.password()))
+        {
+            throw new BadRequestException();
+        }
+        UserData user = userDAO.getUser(request.username());
+        if (user == null || !request.password().equals(user.password()))
+        {
+            throw new UnauthorizedException();
+        }
+        return new LoginResult(request.username(), createAuth(request.username()));
+    }
+
+    private String createAuth(String username) throws DataAccessException
+    {
         String authToken = UUID.randomUUID().toString();
-        authDAO.createAuth(new AuthData(authToken, request.username()));
-        return new RegisterResult(request.username(), authToken);
+        authDAO.createAuth(new AuthData(authToken, username));
+        return authToken;
     }
 
     private static boolean missing(String value)
