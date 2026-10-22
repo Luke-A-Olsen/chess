@@ -20,7 +20,8 @@ public class GameService
         this.gameDAO = gameDAO;
     }
 
-    public CreateGameResult createGame(String authToken, CreateGameRequest request) throws BadRequestException, UnauthorizedException, DataAccessException
+    public CreateGameResult createGame(String authToken, CreateGameRequest request)
+            throws BadRequestException, UnauthorizedException, DataAccessException
     {
         requireAuth(authToken);
         if (request == null || request.gameName() == null || request.gameName().isBlank())
@@ -42,7 +43,8 @@ public class GameService
         return new ListGamesResult(games);
     }
 
-    public void joinGame(String authToken, JoinGameRequest request) throws BadRequestException, UnauthorizedException, AlreadyTakenException, DataAccessException
+    public void joinGame(String authToken, JoinGameRequest request)
+            throws BadRequestException, UnauthorizedException, AlreadyTakenException, DataAccessException
     {
         String username = requireAuth(authToken);
         if (request == null || request.gameID() == null || !validColor(request.playerColor()))
