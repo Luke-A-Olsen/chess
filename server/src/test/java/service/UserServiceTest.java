@@ -119,4 +119,31 @@ public class UserServiceTest
             assertThrows(BadRequestException.class, () -> service.login(request));
         }
     }
+
+    @Test
+    @DisplayName("Logout Removes the Auth Token")
+    void logoutRemovesAuthToken() throws BadRequestException, AlreadyTakenException, UnauthorizedException, DataAccessException
+    {
+        RegisterResult registered = service.register(new RegisterRequest("user", "password", "user@mail.com"));
+        LoginResult loggedIn = service.login(new LoginRequest("user", "password"));
+
+        service.logout(registered.authToken());
+
+        assertNull(authDAO.getAuth(registered.authToken()));
+        assertEquals(new AuthData(loggedIn.authToken(), "user"), authDAO.getAuth(loggedIn.authToken()));
+        assertEquals(new UserData("user", "password", "user@mail.com"), userDAO.getUser("user"));
+    }
+
+    @Test
+    @DisplayName("Logout Rejects an Unknown Auth Token")
+    void logoutRejectsUnknownAuthToken() throws BadRequestException, AlreadyTakenException, UnauthorizedException, DataAccessException
+    {
+        RegisterResult registered = service.register(new RegisterRequest("user", "password", "user@mail.com"));
+        service.logout(registered.authToken());
+
+        assertThrows(UnauthorizedException.class, () -> service.logout(registered.authToken()));
+        assertThrows(UnauthorizedException.class, () -> service.logout(null));
+        assertThrows(UnauthorizedException.class, () -> service.logout(" "));
+        assertThrows(UnauthorizedException.class, () -> service.logout("missing"));
+    }
 }
