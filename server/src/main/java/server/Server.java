@@ -1,6 +1,8 @@
 package server;
 
 import dataaccess.AuthDAO;
+import dataaccess.DataAccessException;
+import dataaccess.DatabaseManager;
 import dataaccess.GameDAO;
 import dataaccess.MemoryAuthDAO;
 import dataaccess.MemoryGameDAO;
@@ -26,6 +28,12 @@ public class Server {
         this.userDAO = userDAO;
         this.gameDAO = gameDAO;
         this.authDAO = authDAO;
+
+        try {
+            DatabaseManager.configureDatabase();
+        } catch (DataAccessException ex) {
+            throw new RuntimeException("Unable to configure database", ex);
+        }
 
         javalin = Javalin.create(config -> config.staticFiles.add("web"));
 
