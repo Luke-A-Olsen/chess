@@ -30,6 +30,7 @@ public class SqlUserDAOTest
     void setup() throws DataAccessException
     {
         userDAO = new SqlUserDAO();
+        new SqlAuthDAO().clear();
         userDAO.clear();
     }
 
