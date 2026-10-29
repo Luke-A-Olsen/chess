@@ -29,6 +29,7 @@ public class SqlAuthDAOTest
     {
         authDAO = new SqlAuthDAO();
         userDAO = new SqlUserDAO();
+        new SqlGameDAO().clear();
         authDAO.clear();
         userDAO.clear();
         userDAO.createUser(new UserData("user", "password", "user@mail.com"));
