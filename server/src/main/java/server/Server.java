@@ -4,10 +4,10 @@ import dataaccess.AuthDAO;
 import dataaccess.DataAccessException;
 import dataaccess.DatabaseManager;
 import dataaccess.GameDAO;
-import dataaccess.MemoryAuthDAO;
-import dataaccess.MemoryGameDAO;
-import dataaccess.MemoryUserDAO;
 import dataaccess.UserDAO;
+import dataaccess.sql.SqlAuthDAO;
+import dataaccess.sql.SqlGameDAO;
+import dataaccess.sql.SqlUserDAO;
 import io.javalin.Javalin;
 import service.ClearService;
 import service.GameService;
@@ -21,7 +21,7 @@ public class Server {
     private final AuthDAO authDAO;
 
     public Server() {
-        this(new MemoryUserDAO(), new MemoryGameDAO(), new MemoryAuthDAO());
+        this(new SqlUserDAO(), new SqlGameDAO(), new SqlAuthDAO());
     }
 
     Server(UserDAO userDAO, GameDAO gameDAO, AuthDAO authDAO) {
