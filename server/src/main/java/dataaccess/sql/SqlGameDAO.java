@@ -113,7 +113,31 @@ public class SqlGameDAO implements GameDAO
     @Override
     public void updateGame(GameData game) throws DataAccessException
     {
-        throw new DataAccessException("not implemented");
+        if (game == null)
+        {
+            throw new DataAccessException("Error: bad request");
+        }
+
+        int updated;
+        String statement = "UPDATE games SET whiteUsername = ?, blackUsername = ?, gameName = ?, game = ? WHERE gameID = ?";
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement))
+        {
+            preparedStatement.setString(1, game.whiteUsername());
+            preparedStatement.setString(2, game.blackUsername());
+            preparedStatement.setString(3, game.gameName());
+            preparedStatement.setString(4, SERIALIZER.toJson(game.game()));
+            preparedStatement.setInt(5, game.gameID());
+            updated = preparedStatement.executeUpdate();
+        }
+        catch (SQLException ex)
+        {
+            throw new DataAccessException("failed to update game", ex);
+        }
+        if (updated == 0)
+        {
+            throw new DataAccessException("Error: bad request");
+        }
     }
 
     private static GameData readGame(ResultSet resultSet) throws SQLException
