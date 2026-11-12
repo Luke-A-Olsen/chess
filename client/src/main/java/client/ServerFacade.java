@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 public class ServerFacade {
@@ -42,6 +43,26 @@ public class ServerFacade {
 
     public void logout(String authToken) throws ResponseException {
         makeRequest("DELETE", "/session", null, authToken, null);
+    }
+
+    public CreateGameResult createGame(String authToken, String gameName) throws ResponseException {
+        var body = Map.of("gameName", gameName);
+        return makeRequest("POST", "/game", body, authToken, CreateGameResult.class);
+    }
+
+    public ListGamesResult listGames(String authToken) throws ResponseException {
+        return makeRequest("GET", "/game", null, authToken, ListGamesResult.class);
+    }
+
+    public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
+        Map<String, Object> body = new HashMap<>();
+        body.put("playerColor", playerColor);
+        body.put("gameID", gameID);
+        makeRequest("PUT", "/game", body, authToken, null);
+    }
+
+    public void clear() throws ResponseException {
+        makeRequest("DELETE", "/db", null, null, null);
     }
 
     URI endpoint(String path) {
