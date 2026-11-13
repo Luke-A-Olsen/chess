@@ -1,10 +1,14 @@
 package ui;
 
+import client.GameListEntry;
+import client.ListGamesResult;
 import client.ResponseException;
 import client.ServerFacade;
 import model.AuthData;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class ChessClient {
     private enum State {
@@ -16,6 +20,7 @@ public class ChessClient {
     private State state = State.PRELOGIN;
     private String authToken;
     private String username;
+    private List<GameListEntry> gameList = new ArrayList<>();
 
     public ChessClient(String serverUrl) {
         server = new ServerFacade(serverUrl);
@@ -55,10 +60,13 @@ public class ChessClient {
         };
     }
 
-    private String evalPostlogin(String command, String[] params) {
+    private String evalPostlogin(String command, String[] params) throws ResponseException {
         return switch (command) {
             case "help" -> postloginHelp();
             case "quit" -> "quit";
+            case "logout" -> logout();
+            case "create" -> createGame(params);
+            case "list" -> listGames();
             default -> "Unknown command. Type 'help' to see available commands.";
         };
     }
@@ -85,6 +93,41 @@ public class ChessClient {
         return "Registered and logged in as " + username + ".";
     }
 
+    private String logout() throws ResponseException {
+        server.logout(authToken);
+        authToken = null;
+        username = null;
+        gameList = new ArrayList<>();
+        state = State.PRELOGIN;
+        return "Logged out.";
+    }
+
+    private String createGame(String[] params) throws ResponseException {
+        if (params.length != 1) {
+            return "Expected: create <NAME>";
+        }
+        server.createGame(authToken, params[0]);
+        return "Created game \"" + params[0] + "\".";
+    }
+
+    private String listGames() throws ResponseException {
+        ListGamesResult result = server.listGames(authToken);
+        gameList = new ArrayList<>(result.games());
+        if (gameList.isEmpty()) {
+            return "No games available.";
+        }
+
+        StringBuilder output = new StringBuilder("Games:\n");
+        for (int i = 0; i < gameList.size(); i++) {
+            GameListEntry game = gameList.get(i);
+            String white = game.whiteUsername() == null ? "(empty)" : game.whiteUsername();
+            String black = game.blackUsername() == null ? "(empty)" : game.blackUsername();
+            output.append(String.format("  %d. %s\tWhite: %s\tBlack: %s%n",
+                    i + 1, game.gameName(), white, black));
+        }
+        return output.toString().stripTrailing();
+    }
+
     private String preloginHelp() {
         return """
                 Available commands:
@@ -98,9 +141,11 @@ public class ChessClient {
     private String postloginHelp() {
         return """
                 Available commands:
-                  help - show this help text
-                  quit - exit the program
-                More postlogin commands will be added next.
+                  help          - show this help text
+                  logout        - log out and return to the prelogin menu
+                  create <NAME> - create a new game
+                  list          - list existing games
+                  quit          - exit the program
                 """;
     }
 }
