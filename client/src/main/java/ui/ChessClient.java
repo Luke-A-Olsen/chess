@@ -152,11 +152,10 @@ public class ChessClient {
         }
 
         server.joinGame(authToken, color, game.gameID());
-        String message = "Joined \"" + game.gameName() + "\" as " + color + ".";
-        if (color.equals("WHITE")) {
-            message += "\n" + ChessBoardUI.drawWhitePerspective(startingBoard());
-        }
-        return message;
+        String board = color.equals("WHITE")
+                ? ChessBoardUI.drawWhitePerspective(startingBoard())
+                : ChessBoardUI.drawBlackPerspective(startingBoard());
+        return "Joined \"" + game.gameName() + "\" as " + color + ".\n" + board;
     }
 
     private String observeGame(String[] params) {

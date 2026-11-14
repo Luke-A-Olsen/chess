@@ -14,18 +14,35 @@ public class ChessBoardUI {
     private static final String BLACK_PIECE = SET_TEXT_COLOR_BLUE;
 
     public static String drawWhitePerspective(ChessBoard board) {
+        return draw(board, true);
+    }
+
+    public static String drawBlackPerspective(ChessBoard board) {
+        return draw(board, false);
+    }
+
+    private static String draw(ChessBoard board, boolean whitePerspective) {
         StringBuilder output = new StringBuilder();
         output.append("\n");
-        output.append(headerLetters(true));
-        for (int row = 8; row >= 1; row--) {
+        output.append(headerLetters(whitePerspective));
+
+        int rowStart = whitePerspective ? 8 : 1;
+        int rowEnd = whitePerspective ? 1 : 8;
+        int rowStep = whitePerspective ? -1 : 1;
+        int colStart = whitePerspective ? 1 : 8;
+        int colEnd = whitePerspective ? 8 : 1;
+        int colStep = whitePerspective ? 1 : -1;
+
+        for (int row = rowStart; whitePerspective ? row >= rowEnd : row <= rowEnd; row += rowStep) {
             output.append(" ").append(row).append(" ");
-            for (int col = 1; col <= 8; col++) {
+            for (int col = colStart; whitePerspective ? col <= colEnd : col >= colEnd; col += colStep) {
                 output.append(square(board, row, col));
             }
             output.append(RESET_BG_COLOR).append(RESET_TEXT_COLOR);
             output.append(" ").append(row).append("\n");
         }
-        output.append(headerLetters(true));
+
+        output.append(headerLetters(whitePerspective));
         output.append(RESET_BG_COLOR).append(RESET_TEXT_COLOR);
         return output.toString();
     }
@@ -34,6 +51,10 @@ public class ChessBoardUI {
         StringBuilder letters = new StringBuilder("   ");
         if (whitePerspective) {
             for (char file = 'a'; file <= 'h'; file++) {
+                letters.append(" ").append(file).append(" ");
+            }
+        } else {
+            for (char file = 'h'; file >= 'a'; file--) {
                 letters.append(" ").append(file).append(" ");
             }
         }
