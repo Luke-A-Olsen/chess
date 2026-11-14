@@ -1,5 +1,6 @@
 package ui;
 
+import chess.ChessBoard;
 import client.GameListEntry;
 import client.ListGamesResult;
 import client.ResponseException;
@@ -151,7 +152,11 @@ public class ChessClient {
         }
 
         server.joinGame(authToken, color, game.gameID());
-        return "Joined \"" + game.gameName() + "\" as " + color + ".";
+        String message = "Joined \"" + game.gameName() + "\" as " + color + ".";
+        if (color.equals("WHITE")) {
+            message += "\n" + ChessBoardUI.drawWhitePerspective(startingBoard());
+        }
+        return message;
     }
 
     private String observeGame(String[] params) {
@@ -169,7 +174,14 @@ public class ChessClient {
             return "Invalid game number. Run 'list' and choose a valid number.";
         }
 
-        return "Observing \"" + game.gameName() + "\".";
+        return "Observing \"" + game.gameName() + "\".\n"
+                + ChessBoardUI.drawWhitePerspective(startingBoard());
+    }
+
+    private ChessBoard startingBoard() {
+        ChessBoard board = new ChessBoard();
+        board.resetBoard();
+        return board;
     }
 
     private GameListEntry gameFromListNumber(int listNumber) {
