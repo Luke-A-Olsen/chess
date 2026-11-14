@@ -29,6 +29,9 @@ public class ChessClient {
 
     public String eval(String input) {
         try {
+            if (input == null) {
+                return "";
+            }
             var tokens = input.trim().split("\\s+");
             if (tokens.length == 1 && tokens[0].isEmpty()) {
                 return "";
@@ -41,9 +44,9 @@ public class ChessClient {
                 case POSTLOGIN -> evalPostlogin(command, params);
             };
         } catch (ResponseException ex) {
-            return ex.getMessage();
+            return friendlyError(ex);
         } catch (Exception ex) {
-            return "Unexpected error. Please try again.";
+            return "Something went wrong. Please try again.";
         }
     }
 
@@ -54,9 +57,11 @@ public class ChessClient {
     private String evalPrelogin(String command, String[] params) throws ResponseException {
         return switch (command) {
             case "help" -> preloginHelp();
-            case "quit" -> "quit";
+            case "quit", "exit" -> "quit";
             case "login" -> login(params);
             case "register" -> register(params);
+            case "logout", "create", "list", "play", "observe" ->
+                    "You must be logged in to use that command. Type 'help' for options.";
             default -> "Unknown command. Type 'help' to see available commands.";
         };
     }
@@ -64,12 +69,14 @@ public class ChessClient {
     private String evalPostlogin(String command, String[] params) throws ResponseException {
         return switch (command) {
             case "help" -> postloginHelp();
-            case "quit" -> "quit";
+            case "quit", "exit" -> "quit";
             case "logout" -> logout();
             case "create" -> createGame(params);
             case "list" -> listGames();
             case "play" -> playGame(params);
             case "observe" -> observeGame(params);
+            case "login", "register" ->
+                    "You are already logged in. Type 'logout' first or 'help' for options.";
             default -> "Unknown command. Type 'help' to see available commands.";
         };
     }
@@ -79,9 +86,7 @@ public class ChessClient {
             return "Expected: login <username> <password>";
         }
         AuthData auth = server.login(params[0], params[1]);
-        authToken = auth.authToken();
-        username = auth.username();
-        state = State.POSTLOGIN;
+        beginSession(auth);
         return "Logged in as " + username + ".";
     }
 
@@ -90,27 +95,29 @@ public class ChessClient {
             return "Expected: register <username> <password> <email>";
         }
         AuthData auth = server.register(params[0], params[1], params[2]);
-        authToken = auth.authToken();
-        username = auth.username();
-        state = State.POSTLOGIN;
+        beginSession(auth);
         return "Registered and logged in as " + username + ".";
     }
 
-    private String logout() throws ResponseException {
-        server.logout(authToken);
-        authToken = null;
-        username = null;
-        gameList = new ArrayList<>();
-        state = State.PRELOGIN;
+    private String logout() {
+        try {
+            if (authToken != null) {
+                server.logout(authToken);
+            }
+        } catch (ResponseException ignored) {
+            // Clear local state even if the server session is already invalid.
+        }
+        clearSession();
         return "Logged out.";
     }
 
     private String createGame(String[] params) throws ResponseException {
-        if (params.length != 1) {
+        if (params.length < 1) {
             return "Expected: create <NAME>";
         }
-        server.createGame(authToken, params[0]);
-        return "Created game \"" + params[0] + "\".";
+        String gameName = String.join(" ", params);
+        server.createGame(authToken, gameName);
+        return "Created game \"" + gameName + "\".";
     }
 
     private String listGames() throws ResponseException {
@@ -177,6 +184,20 @@ public class ChessClient {
                 + ChessBoardUI.drawWhitePerspective(startingBoard());
     }
 
+    private void beginSession(AuthData auth) {
+        authToken = auth.authToken();
+        username = auth.username();
+        gameList = new ArrayList<>();
+        state = State.POSTLOGIN;
+    }
+
+    private void clearSession() {
+        authToken = null;
+        username = null;
+        gameList = new ArrayList<>();
+        state = State.PRELOGIN;
+    }
+
     private ChessBoard startingBoard() {
         ChessBoard board = new ChessBoard();
         board.resetBoard();
@@ -197,6 +218,21 @@ public class ChessClient {
         } catch (NumberFormatException ex) {
             return null;
         }
+    }
+
+    private String friendlyError(ResponseException ex) {
+        return switch (ex.statusCode()) {
+            case 400 -> "Invalid request. Check your input and try again.";
+            case 401 -> "Unable to authorize that request. Check your credentials.";
+            case 403 -> "That username or player spot is already taken.";
+            default -> {
+                String message = ex.getMessage();
+                if (message == null || message.isBlank()) {
+                    yield "Something went wrong. Please try again.";
+                }
+                yield message;
+            }
+        };
     }
 
     private String preloginHelp() {

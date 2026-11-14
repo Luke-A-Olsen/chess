@@ -15,14 +15,25 @@ public class Repl {
         System.out.println(SET_TEXT_BOLD + "♕ 240 Chess Client" + RESET_TEXT_BOLD_FAINT);
         System.out.println(client.eval("help"));
 
-        Scanner scanner = new Scanner(System.in);
-        var result = "";
-        while (!result.equals("quit")) {
-            printPrompt();
-            String line = scanner.nextLine();
-            result = client.eval(line);
-            if (!result.isEmpty() && !result.equals("quit")) {
-                System.out.println(result);
+        try (Scanner scanner = new Scanner(System.in)) {
+            var result = "";
+            while (!result.equals("quit")) {
+                printPrompt();
+                if (!scanner.hasNextLine()) {
+                    System.out.println();
+                    break;
+                }
+                String line = scanner.nextLine();
+                try {
+                    result = client.eval(line);
+                } catch (Exception ex) {
+                    result = "";
+                    System.out.println("Something went wrong. Please try again.");
+                    continue;
+                }
+                if (!result.isEmpty() && !result.equals("quit")) {
+                    System.out.println(result);
+                }
             }
         }
         System.out.println("Thanks for playing!");
