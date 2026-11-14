@@ -67,6 +67,8 @@ public class ChessClient {
             case "logout" -> logout();
             case "create" -> createGame(params);
             case "list" -> listGames();
+            case "play" -> playGame(params);
+            case "observe" -> observeGame(params);
             default -> "Unknown command. Type 'help' to see available commands.";
         };
     }
@@ -128,6 +130,64 @@ public class ChessClient {
         return output.toString().stripTrailing();
     }
 
+    private String playGame(String[] params) throws ResponseException {
+        if (params.length != 2) {
+            return "Expected: play <LIST_NUMBER> <WHITE|BLACK>";
+        }
+
+        Integer listNumber = parsePositiveInt(params[0]);
+        if (listNumber == null) {
+            return "Game number must be a positive integer.";
+        }
+
+        String color = params[1].toUpperCase();
+        if (!color.equals("WHITE") && !color.equals("BLACK")) {
+            return "Player color must be WHITE or BLACK.";
+        }
+
+        GameListEntry game = gameFromListNumber(listNumber);
+        if (game == null) {
+            return "Invalid game number. Run 'list' and choose a valid number.";
+        }
+
+        server.joinGame(authToken, color, game.gameID());
+        return "Joined \"" + game.gameName() + "\" as " + color + ".";
+    }
+
+    private String observeGame(String[] params) {
+        if (params.length != 1) {
+            return "Expected: observe <LIST_NUMBER>";
+        }
+
+        Integer listNumber = parsePositiveInt(params[0]);
+        if (listNumber == null) {
+            return "Game number must be a positive integer.";
+        }
+
+        GameListEntry game = gameFromListNumber(listNumber);
+        if (game == null) {
+            return "Invalid game number. Run 'list' and choose a valid number.";
+        }
+
+        return "Observing \"" + game.gameName() + "\".";
+    }
+
+    private GameListEntry gameFromListNumber(int listNumber) {
+        if (listNumber < 1 || listNumber > gameList.size()) {
+            return null;
+        }
+        return gameList.get(listNumber - 1);
+    }
+
+    private Integer parsePositiveInt(String value) {
+        try {
+            int number = Integer.parseInt(value);
+            return number > 0 ? number : null;
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
     private String preloginHelp() {
         return """
                 Available commands:
@@ -141,11 +201,13 @@ public class ChessClient {
     private String postloginHelp() {
         return """
                 Available commands:
-                  help          - show this help text
-                  logout        - log out and return to the prelogin menu
-                  create <NAME> - create a new game
-                  list          - list existing games
-                  quit          - exit the program
+                  help                      - show this help text
+                  logout                    - log out and return to the prelogin menu
+                  create <NAME>             - create a new game
+                  list                      - list existing games
+                  play <#> <WHITE|BLACK>    - join a game as a player
+                  observe <#>               - observe a game
+                  quit                      - exit the program
                 """;
     }
 }
