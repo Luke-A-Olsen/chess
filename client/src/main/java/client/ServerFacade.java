@@ -27,10 +27,6 @@ public class ServerFacade {
         this.serverUrl = serverUrl.endsWith("/") ? serverUrl.substring(0, serverUrl.length() - 1) : serverUrl;
     }
 
-    public String serverUrl() {
-        return serverUrl;
-    }
-
     public AuthData register(String username, String password, String email) throws ResponseException {
         var body = Map.of("username", username, "password", password, "email", email);
         return makeRequest("POST", "/user", body, null, AuthData.class);
